@@ -8,67 +8,76 @@
 <meta name="apple-mobile-web-app-title" content="POIZON Calc">
 <meta name="theme-color" content="#0d0d0d">
 <title>POIZON Calc</title>
-<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%231a1a2e'/><text x='50' y='62' text-anchor='middle' font-size='50'>👟</text></svg>">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',sans-serif;
 background:linear-gradient(165deg,#0d0d0d 0%,#1a1a2e 50%,#16213e 100%);
-color:#f0f0f0;min-height:100vh;min-height:100dvh;overflow-x:hidden;
+color:#f0f0f0;min-height:100dvh;overflow-x:hidden;
 padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
-#app{max-width:430px;margin:0 auto;padding:0 0 40px;position:relative}
-.toast{position:fixed;top:60px;left:50%;transform:translateX(-50%);
+#app{max-width:430px;margin:0 auto;padding:0 0 60px}
+
+/* toast */
+#toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) translateY(-20px);
 background:rgba(0,200,83,.95);color:#fff;padding:10px 28px;border-radius:24px;
-font-size:14px;font-weight:600;z-index:100;box-shadow:0 4px 20px rgba(0,200,83,.4);
-animation:fadeIn .3s}
-@keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(-10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+font-size:14px;font-weight:600;z-index:200;box-shadow:0 4px 20px rgba(0,200,83,.4);
+opacity:0;transition:opacity .3s,transform .3s;pointer-events:none}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* top bar */
 .top-bar{display:flex;justify-content:space-between;align-items:center;padding:20px 20px 8px}
-.logo{font-size:21px;font-weight:800;letter-spacing:-.5px;
-background:linear-gradient(135deg,#e0e0e0,#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.logo-icon{font-size:22px;margin-right:6px}
+.logo{font-size:21px;font-weight:800;background:linear-gradient(135deg,#e0e0e0,#fff);
+-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .list-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
 color:#ccc;border-radius:20px;padding:7px 14px;font-size:13px;font-weight:500;
 cursor:pointer;display:flex;align-items:center;gap:6px}
-.list-badge{background:rgba(0,200,83,.25);color:#00e676;border-radius:10px;
+#badge{background:rgba(0,200,83,.25);color:#00e676;border-radius:10px;
 padding:1px 8px;font-size:12px;font-weight:700}
+
+/* tabs */
 .tab-bar{display:flex;margin:4px 20px 0;background:rgba(255,255,255,.04);
 border-radius:12px;padding:3px;border:1px solid rgba(255,255,255,.06)}
 .tab{flex:1;padding:10px 0;font-size:14px;font-weight:500;cursor:pointer;
-background:transparent;border-radius:10px;border:1px solid transparent;color:#666;text-align:center;transition:all .2s}
-.tab.active{font-weight:700;background:rgba(255,255,255,.08);border:1px solid}
-.tab-bar-list{display:flex;gap:8px;padding:0 20px;margin-bottom:8px}
-.tab-list{flex:1;padding:9px 0;font-size:13px;font-weight:500;cursor:pointer;
-background:transparent;border-radius:10px;border:1px solid rgba(255,255,255,.06);
-color:#555;display:flex;align-items:center;justify-content:center;gap:4px;text-align:center}
-.tab-list.active{font-weight:700;background:rgba(255,255,255,.08);
-border:1px solid rgba(255,255,255,.15);color:#fff}
-.tab-count{font-size:11px;opacity:.6;margin-left:2px}
+background:transparent;border-radius:10px;border:1px solid transparent;
+color:#666;transition:all .2s;text-align:center}
+.tab.shoes.active{color:#40c4ff;border-color:#40c4ff;background:rgba(255,255,255,.08);font-weight:700}
+.tab.apparel.active{color:#ce93d8;border-color:#ce93d8;background:rgba(255,255,255,.08);font-weight:700}
+
+/* inputs */
 .input-section{padding:4px 20px 0}
 .row{display:flex;gap:10px}
 .field-label{display:block;font-size:11px;font-weight:600;color:#888;
 margin-bottom:5px;margin-top:14px;text-transform:uppercase;letter-spacing:.5px}
-input[type=text]{width:100%;padding:12px 14px;font-size:17px;font-weight:600;
+input{width:100%;padding:12px 14px;font-size:17px;font-weight:600;
 background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
-border-radius:12px;color:#fff;outline:none;-webkit-appearance:none}
-input[type=text]:focus{border-color:rgba(255,255,255,.25)}
+border-radius:12px;color:#fff;outline:none;-webkit-appearance:none;appearance:none}
+input::placeholder{color:#444}
+input:focus{border-color:rgba(255,255,255,.3)}
+
+/* brand select */
 .select-btn{width:100%;padding:12px 14px;font-size:15px;font-weight:600;
 background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
 border-radius:12px;color:#fff;cursor:pointer;display:flex;
-justify-content:space-between;align-items:center;text-align:left}
-.dropdown{position:absolute;top:100%;left:0;right:0;z-index:50;
-background:#1e1e3a;border:1px solid rgba(255,255,255,.12);border-radius:12px;
-margin-top:4px;max-height:240px;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,.6)}
+justify-content:space-between;align-items:center}
+#brand-wrap{position:relative}
+#dropdown{position:absolute;top:100%;left:0;right:0;z-index:50;
+background:#1e1e3a;border:1px solid rgba(255,255,255,.15);border-radius:12px;
+margin-top:4px;max-height:220px;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,.7)}
 .drop-item{display:block;width:100%;padding:11px 16px;font-size:14px;font-weight:500;
 background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.04);
 color:#ccc;cursor:pointer;text-align:left}
-.drop-item.active{font-weight:700;background:rgba(64,196,255,.1);color:#40c4ff}
+.drop-item.sel{font-weight:700;background:rgba(64,196,255,.1);color:#40c4ff}
+
+/* fee box */
 .fee-box{margin:18px 20px 0;background:rgba(255,255,255,.04);border-radius:14px;
 padding:14px 16px;border:1px solid rgba(255,255,255,.06)}
 .fee-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0}
 .fee-label{font-size:13px;color:#999}
 .fee-sub{font-size:10px;color:#666;margin-left:4px}
 .fee-val{font-size:13px;color:#ef9a9a;font-weight:600}
-.result-box{margin:12px 20px 0;
-background:linear-gradient(135deg,rgba(255,255,255,.08),rgba(255,255,255,.03));
+.fee-total-val{font-size:13px;color:#ffa726;font-weight:600}
+
+/* result */
+.result-box{margin:12px 20px 0;background:linear-gradient(135deg,rgba(255,255,255,.08),rgba(255,255,255,.03));
 border-radius:18px;padding:16px 18px;border:1px solid rgba(255,255,255,.1)}
 .result-row{display:flex;justify-content:space-between;align-items:center}
 .result-label{font-size:13px;color:#aaa}
@@ -79,305 +88,424 @@ border-radius:18px;padding:16px 18px;border:1px solid rgba(255,255,255,.1)}
 .profit-rate-tag{font-size:12px;color:#888;margin-left:8px;font-weight:500;
 background:rgba(255,255,255,.06);padding:2px 8px;border-radius:8px}
 .profit-val{font-size:26px;font-weight:800;letter-spacing:-1px}
-.ev-box{margin:12px 20px 0;
-background:linear-gradient(135deg,rgba(64,196,255,.06),rgba(255,215,64,.04));
+
+/* ev box */
+.ev-box{margin:12px 20px 0;background:linear-gradient(135deg,rgba(64,196,255,.06),rgba(255,215,64,.04));
 border-radius:18px;padding:16px 18px;border:1px solid rgba(64,196,255,.15)}
 .ev-header{display:flex;justify-content:space-between;align-items:center}
 .ev-title{font-size:15px;font-weight:700;color:#ddd}
 .ev-sub{font-size:11px;color:#666;margin-left:8px}
-.grade-circle{width:38px;height:38px;border-radius:19px;display:flex;align-items:center;
-justify-content:center;font-size:19px;font-weight:900;border:2px solid;letter-spacing:-1px}
+.grade-circle{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;
+justify-content:center;font-size:19px;font-weight:900;border:2px solid}
 .ev-value-row{margin-top:6px}
 .ev-value{font-size:28px;font-weight:800;letter-spacing:-1px}
 .ev-detail{display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;
 border-top:1px solid rgba(255,255,255,.06)}
 .ev-detail-label{font-size:12px;color:#777}
 .ev-detail-val{font-size:13px;color:#aaa;font-weight:600}
-.ev-grade-guide{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;padding-top:8px;
+.ev-guide{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;padding-top:8px;
 border-top:1px solid rgba(255,255,255,.06)}
-.ev-guide-item{font-size:10px;color:#555;background:rgba(255,255,255,.03);
-padding:3px 8px;border-radius:6px}
-.save-btn{display:block;width:calc(100% - 40px);margin:18px auto 0;padding:15px;
+.ev-guide span{font-size:10px;color:#555;background:rgba(255,255,255,.03);padding:3px 8px;border-radius:6px}
+
+/* save btn */
+#save-btn{display:block;width:calc(100% - 40px);margin:18px auto 0;padding:15px;
 font-size:15px;font-weight:700;color:#fff;
 background:linear-gradient(135deg,#1b5e20,#2e7d32);border:none;border-radius:14px;
 cursor:pointer;box-shadow:0 4px 20px rgba(46,125,50,.3);transition:opacity .2s}
-.save-btn:disabled{opacity:.4}
-.header{display:flex;justify-content:space-between;align-items:center;padding:20px 20px 12px}
+#save-btn:disabled{opacity:.4;cursor:default}
+
+/* views */
+#main-view,#list-view{display:none}
+#main-view.active,#list-view.active{display:block}
+
+/* list view */
+.lv-header{display:flex;justify-content:space-between;align-items:center;padding:20px 20px 12px}
 .back-btn{background:none;border:none;color:#90caf9;font-size:15px;font-weight:600;cursor:pointer;padding:0}
-.header-title{font-size:18px;font-weight:700;color:#eee}
+.lv-title{font-size:18px;font-weight:700;color:#eee}
+.tab-bar-list{display:flex;gap:8px;padding:0 20px;margin-bottom:8px}
+.tab-list{flex:1;padding:9px 0;font-size:13px;font-weight:500;cursor:pointer;
+background:transparent;border-radius:10px;border:1px solid rgba(255,255,255,.06);
+color:#555;display:flex;align-items:center;justify-content:center;gap:4px}
+.tab-list.active{font-weight:700;background:rgba(255,255,255,.08);
+border-color:rgba(255,255,255,.2);color:#fff}
 .list-wrap{padding:8px 20px}
 .empty{text-align:center;color:#666;font-size:14px;margin-top:60px}
 .card{background:rgba(255,255,255,.05);border-radius:16px;padding:14px 16px;
-margin-bottom:12px;border:1px solid rgba(255,255,255,.08);cursor:pointer}
+margin-bottom:12px;border:1px solid rgba(255,255,255,.08);cursor:pointer;
+-webkit-user-select:none;user-select:none}
 .card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .card-tags{display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;min-width:0}
-.grade-sm{font-size:13px;font-weight:800;width:26px;height:26px;border-radius:13px;
-display:flex;align-items:center;justify-content:center;border:1.5px solid;
-background:rgba(255,255,255,.03)}
-.card-brand{font-size:11px;color:#ffa726;background:rgba(255,167,38,.1);
-padding:2px 7px;border-radius:6px;font-weight:600}
+.grade-sm{font-size:13px;font-weight:800;width:26px;height:26px;border-radius:50%;
+display:flex;align-items:center;justify-content:center;border:1.5px solid;flex-shrink:0}
+.card-brand{font-size:11px;color:#ffa726;background:rgba(255,167,38,.1);padding:2px 7px;border-radius:6px;font-weight:600}
 .card-model{font-size:14px;font-weight:700;color:#fff}
-.card-size{font-size:11px;color:#90caf9;background:rgba(144,202,249,.1);
-padding:2px 7px;border-radius:6px;font-weight:600}
+.card-size-tag{font-size:11px;color:#90caf9;background:rgba(144,202,249,.1);padding:2px 7px;border-radius:6px;font-weight:600}
 .del-btn{background:rgba(255,23,68,.15);border:none;color:#ff5252;border-radius:8px;
 width:28px;height:28px;font-size:12px;cursor:pointer;flex-shrink:0;
 display:flex;align-items:center;justify-content:center}
 .card-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px 12px}
 .card-cell{display:flex;flex-direction:column;gap:2px}
-.card-cell-label{font-size:10px;color:#666;text-transform:uppercase}
-.card-cell-val{font-size:13px;color:#ccc}
+.cell-label{font-size:10px;color:#666;text-transform:uppercase}
+.cell-val{font-size:13px;color:#ccc}
 .card-date{font-size:11px;color:#555;margin-top:8px;text-align:right}
-.hidden{display:none}
 </style>
 </head>
 <body>
-<div id="app"></div>
-<script>
-const STORAGE_KEY='poizon-calc-v4';
-const BRANDS={
-shoes:["Nike","Jordan","adidas","New Balance","ASICS","Converse","Vans","Puma","Reebok","Salomon","On","HOKA","Yeezy","Balenciaga","Gucci","Louis Vuitton","Dior","Prada","Rick Owens","Maison Margiela","Bottega Veneta","その他"],
-apparel:["Supreme","Stüssy","Nike","adidas","THE NORTH FACE","Arc'teryx","Patagonia","HUMAN MADE","A BATHING APE","Palm Angels","Off-White","Fear of God","ESSENTIALS","Stone Island","C.P. Company","Moncler","Louis Vuitton","Gucci","Balenciaga","Prada","Dior","Chrome Hearts","Gallery Dept.","Rhude","その他"]
-};
+<div id="app">
+  <div id="toast"></div>
 
-let state={
-  tab:'shoes',brand:'',brandOpen:false,
-  price:'',cost:'',shipping:'',modelNo:'',size:'',turnover:'',
-  saved:JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'),
-  showList:false,toast:''
-};
+  <!-- ═══ MAIN VIEW ═══ -->
+  <div id="main-view" class="active">
+    <div class="top-bar">
+      <h1 class="logo"><span id="logo-icon">👟</span> POIZON Calc</h1>
+      <button class="list-btn" onclick="showList()">
+        <span id="badge">0</span>保存
+      </button>
+    </div>
 
-function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state.saved))}
+    <div class="tab-bar">
+      <button class="tab shoes active" onclick="switchTab('shoes')">👟 シューズ</button>
+      <button class="tab apparel" onclick="switchTab('apparel')">👕 アパレル</button>
+    </div>
 
-const fmt=n=>{const v=Math.floor(n);return(v<0?'-¥':'¥')+Math.abs(v).toLocaleString()};
+    <div class="input-section">
+      <label class="field-label">ブランド</label>
+      <div id="brand-wrap">
+        <button class="select-btn" id="brand-btn" onclick="toggleDropdown()">
+          <span id="brand-label" style="color:#666">ブランドを選択</span>
+          <span id="brand-arrow" style="color:#666;font-size:12px">▼</span>
+        </button>
+        <div id="dropdown" style="display:none"></div>
+      </div>
 
-function calcWorkFee(p){
-  if(p<=0)return 0;
-  return p*0.05<700 ? 700+1900+Math.floor(p*0.01) : Math.floor(p*0.06)+1900;
-}
+      <div class="row">
+        <div style="flex:1">
+          <label class="field-label">商品番号（型番）</label>
+          <input id="inp-modelNo" type="text" inputmode="text" placeholder="DZ5485-612" oninput="onInput('modelNo',this.value)">
+        </div>
+        <div style="width:100px">
+          <label class="field-label" id="size-label">サイズ</label>
+          <input id="inp-size" type="text" inputmode="text" placeholder="27.5" oninput="onInput('size',this.value)">
+        </div>
+      </div>
 
-function getGrade(profit,cost,turnover){
-  const pr=cost>0?(profit/cost)*100:0;const t=turnover;
-  if(pr<=0||t<=0)return{label:'—',color:'#666',bg:'rgba(255,255,255,0.05)'};
-  if(pr>=20&&t>=10)return{label:'S',color:'#ffd740',bg:'rgba(255,215,64,0.12)'};
-  if(pr>=15&&t>=6)return{label:'A',color:'#69f0ae',bg:'rgba(105,240,174,0.1)'};
-  if(pr>=10&&t>=3)return{label:'B',color:'#40c4ff',bg:'rgba(64,196,255,0.1)'};
-  if(pr>=5)return{label:'C',color:'#aaa',bg:'rgba(255,255,255,0.05)'};
-  return{label:'D',color:'#ef5350',bg:'rgba(239,83,80,0.1)'};
-}
+      <div class="row">
+        <div style="flex:1">
+          <label class="field-label">販売価格</label>
+          <input id="inp-price" type="text" inputmode="numeric" placeholder="¥0" oninput="onNumInput('price',this)">
+        </div>
+        <div style="flex:1">
+          <label class="field-label">仕入価格</label>
+          <input id="inp-cost" type="text" inputmode="numeric" placeholder="¥0" oninput="onNumInput('cost',this)">
+        </div>
+      </div>
 
-function showToast(msg){
-  state.toast=msg;render();
-  setTimeout(()=>{state.toast='';render()},1800);
-}
+      <div class="row">
+        <div style="flex:1">
+          <label class="field-label">送料</label>
+          <input id="inp-shipping" type="text" inputmode="numeric" placeholder="¥0（任意）" oninput="onNumInput('shipping',this)">
+        </div>
+        <div style="flex:1">
+          <label class="field-label">30日 回転数</label>
+          <input id="inp-turnover" type="text" inputmode="decimal" placeholder="例: 5" oninput="onDecInput('turnover',this)">
+        </div>
+      </div>
+    </div>
 
-function resetForm(){
-  state.brand='';state.price='';state.cost='';state.shipping='';
-  state.modelNo='';state.size='';state.turnover='';state.brandOpen=false;
-}
+    <!-- Fee box -->
+    <div class="fee-box">
+      <div class="fee-row">
+        <span class="fee-label">作業手数料<span class="fee-sub" id="wf-label"></span></span>
+        <span class="fee-val" id="wf-val">¥0</span>
+      </div>
+      <div class="fee-row" id="sh-row" style="display:none">
+        <span class="fee-label">送料</span>
+        <span class="fee-val" id="sh-val">¥0</span>
+      </div>
+      <div class="fee-row" style="border-top:1px solid rgba(255,255,255,.1);padding-top:10px;margin-top:4px">
+        <span class="fee-label">控除合計</span>
+        <span class="fee-total-val" id="total-deduct">¥0</span>
+      </div>
+    </div>
 
-function handleSave(){
-  if(!state.modelNo.trim())return;
-  const p=Number(state.price)||0,c=Number(state.cost)||0,sh=Number(state.shipping)||0,t=Number(state.turnover)||0;
-  const wf=calcWorkFee(p);const profit=p-wf-sh-c;
-  const g=getGrade(profit,c,t);
-  state.saved.unshift({
-    id:Date.now(),tab:state.tab,brand:state.brand,modelNo:state.modelNo.trim(),
-    size:state.size.trim(),price:p,cost:c,shipping:sh,profit,turnover:t,workFee:wf,
-    profitRate:c>0?((profit/c)*100).toFixed(1):'0.0',
-    expectedValue:profit*t,grade:g.label,
-    date:new Date().toLocaleDateString('ja-JP')
-  });
-  save();showToast('保存しました');
-}
+    <!-- Result -->
+    <div class="result-box">
+      <div class="result-row">
+        <span class="result-label">手取り額</span>
+        <span class="result-val" id="revenue-val">¥0</span>
+      </div>
+      <div class="divider"></div>
+      <div class="profit-row">
+        <div>
+          <span class="profit-label">見込利益</span>
+          <span class="profit-rate-tag" id="profit-rate">0%</span>
+        </div>
+        <span class="profit-val" id="profit-val">¥0</span>
+      </div>
+    </div>
 
-function handleDelete(id){
-  state.saved=state.saved.filter(s=>s.id!==id);save();render();
-}
+    <!-- EV box -->
+    <div class="ev-box">
+      <div class="ev-header">
+        <div><span class="ev-title">月間期待値</span><span class="ev-sub">利益 × 回転数</span></div>
+        <div class="grade-circle" id="grade-circle">—</div>
+      </div>
+      <div class="ev-value-row">
+        <span class="ev-value" id="ev-val">¥0</span>
+      </div>
+      <div class="ev-detail">
+        <span class="ev-detail-label">1日あたり期待利益</span>
+        <span class="ev-detail-val" id="ev-day">¥0/日</span>
+      </div>
+      <div class="ev-guide">
+        <span><span style="color:#ffd740">S</span> 利益率20%↑ 回転10↑</span>
+        <span><span style="color:#69f0ae">A</span> 15%↑ 6↑</span>
+        <span><span style="color:#40c4ff">B</span> 10%↑ 3↑</span>
+        <span><span style="color:#aaa">C</span> 5%↑</span>
+      </div>
+    </div>
 
-function handleLoad(item){
-  state.tab=item.tab||'shoes';state.brand=item.brand||'';
-  state.price=String(item.price);state.cost=String(item.cost);
-  state.shipping=String(item.shipping||'');state.modelNo=item.modelNo;
-  state.size=item.size||'';state.turnover=String(item.turnover||'');
-  state.showList=false;state.brandOpen=false;render();
-}
+    <button id="save-btn" disabled onclick="handleSave()">この商品を保存する</button>
+  </div>
 
-function numOnly(v){return v.replace(/[^0-9]/g,'')}
-function decOnly(v){return v.replace(/[^0-9.]/g,'')}
-
-function render(){
-  const app=document.getElementById('app');
-  const p=Number(state.price)||0,c=Number(state.cost)||0,sh=Number(state.shipping)||0,t=Number(state.turnover)||0;
-  const wf=calcWorkFee(p);const totalDeduct=wf+sh;const revenue=p-totalDeduct;
-  const profit=revenue-c;
-  const profitRate=c>0?((profit/c)*100).toFixed(1):'0.0';
-  const ev=profit*t;const evDay=t>0?profit*(t/30):0;
-  const grade=getGrade(profit,c,t);
-  const wfLabel=p>0&&p*0.05<700?'700 + 1,900 + 1%':'6% + 1,900';
-  const accent=state.tab==='shoes'?{p:'#40c4ff'}:{p:'#ce93d8'};
-  const filtered=state.saved.filter(s=>(s.tab||'shoes')===state.tab);
-
-  if(state.showList){
-    app.innerHTML=`
-    <div class="header">
-      <button class="back-btn" onclick="state.showList=false;render()">← 戻る</button>
-      <h2 class="header-title">${state.tab==='shoes'?'👟 シューズ':'👕 アパレル'}</h2>
+  <!-- ═══ LIST VIEW ═══ -->
+  <div id="list-view">
+    <div class="lv-header">
+      <button class="back-btn" onclick="hideList()">← 戻る</button>
+      <h2 class="lv-title" id="lv-title">👟 シューズ</h2>
       <div style="width:48px"></div>
     </div>
     <div class="tab-bar-list">
-      ${['shoes','apparel'].map(k=>{
-        const cnt=state.saved.filter(s=>(s.tab||'shoes')===k).length;
-        const ic=k==='shoes'?'👟':'👕';const lb=k==='shoes'?'シューズ':'アパレル';
-        return`<button class="tab-list ${state.tab===k?'active':''}" onclick="state.tab='${k}';render()">${ic} ${lb} <span class="tab-count">${cnt}</span></button>`;
-      }).join('')}
+      <button class="tab-list active" id="ltab-shoes" onclick="switchListTab('shoes')">👟 シューズ <span id="ltab-shoes-cnt"></span></button>
+      <button class="tab-list" id="ltab-apparel" onclick="switchListTab('apparel')">👕 アパレル <span id="ltab-apparel-cnt"></span></button>
     </div>
-    <div class="list-wrap">
-      ${filtered.length===0?'<p class="empty">保存された商品はありません</p>':''}
-      ${filtered.map(item=>{
-        const gc={S:'#ffd740',A:'#69f0ae',B:'#40c4ff',C:'#aaa',D:'#ef5350'}[item.grade]||'#666';
-        return`<div class="card" onclick="handleLoad(state.saved.find(s=>s.id===${item.id}))">
-          <div class="card-top">
-            <div class="card-tags">
-              <span class="grade-sm" style="color:${gc};border-color:${gc}">${item.grade||'—'}</span>
-              ${item.brand?`<span class="card-brand">${item.brand}</span>`:''}
-              <span class="card-model">${item.modelNo}</span>
-              ${item.size?`<span class="card-size">${item.size}</span>`:''}
-            </div>
-            <button class="del-btn" onclick="event.stopPropagation();handleDelete(${item.id})">✕</button>
-          </div>
-          <div class="card-grid">
-            <div class="card-cell"><span class="card-cell-label">販売</span><span class="card-cell-val">${fmt(item.price)}</span></div>
-            <div class="card-cell"><span class="card-cell-label">仕入</span><span class="card-cell-val">${fmt(item.cost)}</span></div>
-            <div class="card-cell"><span class="card-cell-label">利益</span><span class="card-cell-val" style="color:${item.profit>=0?'#69f0ae':'#ff5252'};font-weight:700">${fmt(item.profit)}</span></div>
-            <div class="card-cell"><span class="card-cell-label">回転数</span><span class="card-cell-val">${item.turnover||0}回</span></div>
-            <div class="card-cell"><span class="card-cell-label">利益率</span><span class="card-cell-val">${item.profitRate||'0.0'}%</span></div>
-            <div class="card-cell"><span class="card-cell-label">期待値</span><span class="card-cell-val" style="color:${(item.expectedValue||0)>=0?'#40c4ff':'#ff5252'};font-weight:700">${fmt(item.expectedValue||0)}</span></div>
-          </div>
-          <div class="card-date">${item.date}</div>
-        </div>`;
-      }).join('')}
-    </div>`;
-    return;
-  }
-
-  app.innerHTML=`
-  ${state.toast?`<div class="toast">${state.toast}</div>`:''}
-  <div class="top-bar">
-    <h1 class="logo"><span class="logo-icon">${state.tab==='shoes'?'👟':'👕'}</span> POIZON Calc</h1>
-    <button class="list-btn" onclick="state.showList=true;render()">
-      <span class="list-badge">${state.saved.length}</span>保存
-    </button>
+    <div class="list-wrap" id="list-items"></div>
   </div>
+</div>
 
-  <div class="tab-bar">
-    ${['shoes','apparel'].map(k=>{
-      const ic=k==='shoes'?'👟':'👕';const lb=k==='shoes'?'シューズ':'アパレル';
-      const ac=k==='shoes'?'#40c4ff':'#ce93d8';
-      return`<button class="tab ${state.tab===k?'active':''}" style="${state.tab===k?'border-color:'+ac+';color:'+ac:''}" onclick="state.tab='${k}';resetForm();render()">${ic} ${lb}</button>`;
-    }).join('')}
-  </div>
+<script>
+const SK='poizon-calc-v5';
+const BRANDS={
+  shoes:["Nike","Jordan","adidas","New Balance","ASICS","Converse","Vans","Puma","Reebok","Salomon","On","HOKA","Yeezy","Balenciaga","Gucci","Louis Vuitton","Dior","Prada","Rick Owens","Maison Margiela","Bottega Veneta","その他"],
+  apparel:["Supreme","Stüssy","Nike","adidas","THE NORTH FACE","Arc'teryx","Patagonia","HUMAN MADE","A BATHING APE","Palm Angels","Off-White","Fear of God","ESSENTIALS","Stone Island","C.P. Company","Moncler","Louis Vuitton","Gucci","Balenciaga","Prada","Dior","Chrome Hearts","Gallery Dept.","Rhude","その他"]
+};
 
-  <div class="input-section">
-    <label class="field-label">ブランド</label>
-    <div style="position:relative" id="brand-wrap">
-      <button class="select-btn" onclick="event.stopPropagation();state.brandOpen=!state.brandOpen;render()">
-        <span style="color:${state.brand?'#fff':'#666'}">${state.brand||'ブランドを選択'}</span>
-        <span style="color:#666;font-size:12px">${state.brandOpen?'▲':'▼'}</span>
-      </button>
-      ${state.brandOpen?`<div class="dropdown">${BRANDS[state.tab].map(b=>
-        `<button class="drop-item ${state.brand===b?'active':''}" onclick="event.stopPropagation();state.brand='${b}';state.brandOpen=false;render()">${b}</button>`
-      ).join('')}</div>`:''}
-    </div>
+let S={
+  tab:'shoes', brand:'',
+  modelNo:'', size:'', price:'', cost:'', shipping:'', turnover:'',
+  saved: JSON.parse(localStorage.getItem(SK)||'[]'),
+  listTab:'shoes'
+};
 
-    <div class="row">
-      <div style="flex:1">
-        <label class="field-label">商品番号（型番）</label>
-        <input type="text" placeholder="${state.tab==='shoes'?'DZ5485-612':'FW24-001'}" value="${state.modelNo}" oninput="state.modelNo=this.value;render()">
-      </div>
-      <div style="width:100px">
-        <label class="field-label">${state.tab==='shoes'?'サイズ':'サイズ/規格'}</label>
-        <input type="text" placeholder="${state.tab==='shoes'?'27.5':'L'}" value="${state.size}" oninput="state.size=this.value;render()">
-      </div>
-    </div>
+const fmt=n=>{const v=Math.floor(n);return(v<0?'-¥':'¥')+Math.abs(v).toLocaleString()};
+function calcWF(p){if(!p)return 0;return p*0.05<700?700+1900+Math.floor(p*0.01):Math.floor(p*0.06)+1900}
+function getGrade(profit,c,t){
+  const pr=c>0?(profit/c)*100:0;
+  if(pr<=0||t<=0)return{l:'—',col:'#666',bg:'rgba(255,255,255,0.05)'};
+  if(pr>=20&&t>=10)return{l:'S',col:'#ffd740',bg:'rgba(255,215,64,0.12)'};
+  if(pr>=15&&t>=6) return{l:'A',col:'#69f0ae',bg:'rgba(105,240,174,0.1)'};
+  if(pr>=10&&t>=3) return{l:'B',col:'#40c4ff',bg:'rgba(64,196,255,0.1)'};
+  if(pr>=5)        return{l:'C',col:'#aaa',bg:'rgba(255,255,255,0.05)'};
+  return{l:'D',col:'#ef5350',bg:'rgba(239,83,80,0.1)'};
+}
+function persist(){localStorage.setItem(SK,JSON.stringify(S.saved))}
 
-    <div class="row">
-      <div style="flex:1">
-        <label class="field-label">販売価格</label>
-        <input type="text" inputmode="numeric" placeholder="¥0" value="${state.price}" oninput="state.price=numOnly(this.value);this.value=state.price;render()">
-      </div>
-      <div style="flex:1">
-        <label class="field-label">仕入価格</label>
-        <input type="text" inputmode="numeric" placeholder="¥0" value="${state.cost}" oninput="state.cost=numOnly(this.value);this.value=state.cost;render()">
-      </div>
-    </div>
-
-    <div class="row">
-      <div style="flex:1">
-        <label class="field-label">送料</label>
-        <input type="text" inputmode="numeric" placeholder="¥0（任意）" value="${state.shipping}" oninput="state.shipping=numOnly(this.value);this.value=state.shipping;render()">
-      </div>
-      <div style="flex:1">
-        <label class="field-label">30日 回転数</label>
-        <input type="text" inputmode="decimal" placeholder="例: 5" value="${state.turnover}" oninput="state.turnover=decOnly(this.value);this.value=state.turnover;render()">
-      </div>
-    </div>
-  </div>
-
-  <div class="fee-box">
-    <div class="fee-row">
-      <span class="fee-label">作業手数料<span class="fee-sub">（${wfLabel}）</span></span>
-      <span class="fee-val">- ${fmt(wf)}</span>
-    </div>
-    ${sh>0?`<div class="fee-row"><span class="fee-label">送料</span><span class="fee-val">- ${fmt(sh)}</span></div>`:''}
-    <div class="fee-row" style="border-top:1px solid rgba(255,255,255,.1);padding-top:10px;margin-top:4px">
-      <span class="fee-label">控除合計</span>
-      <span class="fee-val" style="color:#ffa726">- ${fmt(totalDeduct)}</span>
-    </div>
-  </div>
-
-  <div class="result-box">
-    <div class="result-row">
-      <span class="result-label">手取り額</span>
-      <span class="result-val">${fmt(revenue)}</span>
-    </div>
-    <div class="divider"></div>
-    <div class="profit-row">
-      <div><span class="profit-label">見込利益</span><span class="profit-rate-tag">${profitRate}%</span></div>
-      <span class="profit-val" style="color:${profit>=0?'#00e676':'#ff1744'}">${profit>=0?'+':''}${fmt(profit)}</span>
-    </div>
-  </div>
-
-  <div class="ev-box" style="border-color:${accent.p}22">
-    <div class="ev-header">
-      <div><span class="ev-title">月間期待値</span><span class="ev-sub">利益 × 回転数</span></div>
-      <div class="grade-circle" style="color:${grade.color};background:${grade.bg};border-color:${grade.color}">${grade.label}</div>
-    </div>
-    <div class="ev-value-row">
-      <span class="ev-value" style="color:${ev>=0?accent.p:'#ff5252'}">${ev>=0?'+':''}${fmt(ev)}</span>
-    </div>
-    <div class="ev-detail">
-      <span class="ev-detail-label">1日あたり期待利益</span>
-      <span class="ev-detail-val">${fmt(evDay)}/日</span>
-    </div>
-    <div class="ev-grade-guide">
-      <span class="ev-guide-item"><span style="color:#ffd740">S</span> 利益率20%↑ 回転10↑</span>
-      <span class="ev-guide-item"><span style="color:#69f0ae">A</span> 15%↑ 6↑</span>
-      <span class="ev-guide-item"><span style="color:#40c4ff">B</span> 10%↑ 3↑</span>
-      <span class="ev-guide-item"><span style="color:#aaa">C</span> 5%↑</span>
-    </div>
-  </div>
-
-  <button class="save-btn" ${state.modelNo.trim()?'':'disabled'} onclick="handleSave()">この商品を保存する</button>`;
+// ── input handlers ──
+function onInput(key,val){S[key]=val;updateCalc();updateSaveBtn()}
+function onNumInput(key,el){
+  const v=el.value.replace(/[^0-9]/g,'');
+  S[key]=v; el.value=v; updateCalc();updateSaveBtn();
+}
+function onDecInput(key,el){
+  const v=el.value.replace(/[^0-9.]/g,'');
+  S[key]=v; el.value=v; updateCalc();
 }
 
-// Close dropdown on outside tap
+// ── calc & DOM update (no input fields touched) ──
+function updateCalc(){
+  const p=Number(S.price)||0, c=Number(S.cost)||0;
+  const sh=Number(S.shipping)||0, t=Number(S.turnover)||0;
+  const wf=calcWF(p);
+  const total=wf+sh;
+  const rev=p-total;
+  const profit=rev-c;
+  const pr=c>0?((profit/c)*100).toFixed(1):'0.0';
+  const ev=profit*t;
+  const evd=t>0?profit*(t/30):0;
+  const wfl=p>0&&p*0.05<700?'（700 + 1,900 + 1%）':'（6% + 1,900）';
+  const g=getGrade(profit,c,t);
+  const acc=S.tab==='shoes'?'#40c4ff':'#ce93d8';
+
+  $('wf-label').textContent=wfl;
+  $('wf-val').textContent='- '+fmt(wf);
+  const shRow=$('sh-row');
+  if(sh>0){shRow.style.display='flex';$('sh-val').textContent='- '+fmt(sh)}else{shRow.style.display='none'}
+  $('total-deduct').textContent='- '+fmt(total);
+  $('revenue-val').textContent=fmt(rev);
+  $('profit-rate').textContent=pr+'%';
+  const pv=$('profit-val');
+  pv.textContent=(profit>=0?'+':'')+fmt(profit);
+  pv.style.color=profit>=0?'#00e676':'#ff1744';
+  const evEl=$('ev-val');
+  evEl.textContent=(ev>=0?'+':'')+fmt(ev);
+  evEl.style.color=ev>=0?acc:'#ff5252';
+  $('ev-day').textContent=fmt(evd)+'/日';
+  const gc=$('grade-circle');
+  gc.textContent=g.l; gc.style.color=g.col; gc.style.background=g.bg; gc.style.borderColor=g.col;
+}
+
+function updateSaveBtn(){
+  $('save-btn').disabled=!S.modelNo.trim();
+}
+
+// ── tab ──
+function switchTab(tab){
+  S.tab=tab; S.brand=''; S.modelNo=''; S.size=''; S.price=''; S.cost=''; S.shipping=''; S.turnover='';
+  ['inp-modelNo','inp-size','inp-price','inp-cost','inp-shipping','inp-turnover'].forEach(id=>$(id).value='');
+  $('brand-label').textContent='ブランドを選択'; $('brand-label').style.color='#666';
+  $('dropdown').style.display='none';
+  $('logo-icon').textContent=tab==='shoes'?'👟':'👕';
+  $('size-label').textContent=tab==='shoes'?'サイズ':'サイズ/規格';
+  $('inp-modelNo').placeholder=tab==='shoes'?'DZ5485-612':'FW24-001';
+  $('inp-size').placeholder=tab==='shoes'?'27.5':'L';
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.querySelector('.tab.'+tab).classList.add('active');
+  buildDropdown(); updateCalc(); updateSaveBtn();
+}
+
+// ── dropdown ──
+function buildDropdown(){
+  const dd=$('dropdown');
+  dd.innerHTML=BRANDS[S.tab].map(b=>
+    `<button class="drop-item${S.brand===b?' sel':''}" onclick="selectBrand('${b.replace(/'/g,"\\'")}')">` +b+'</button>'
+  ).join('');
+}
+function toggleDropdown(){
+  const dd=$('dropdown');
+  if(dd.style.display==='none'){buildDropdown();dd.style.display='block';$('brand-arrow').textContent='▲'}
+  else{dd.style.display='none';$('brand-arrow').textContent='▼'}
+}
+function selectBrand(b){
+  S.brand=b;
+  $('brand-label').textContent=b; $('brand-label').style.color='#fff';
+  $('dropdown').style.display='none'; $('brand-arrow').textContent='▼';
+}
 document.addEventListener('click',e=>{
-  if(state.brandOpen&&!e.target.closest('#brand-wrap')){
-    state.brandOpen=false;render();
+  if(!e.target.closest('#brand-wrap')){
+    $('dropdown').style.display='none'; $('brand-arrow').textContent='▼';
   }
 });
 
-render();
+// ── save ──
+function handleSave(){
+  if(!S.modelNo.trim())return;
+  const p=Number(S.price)||0,c=Number(S.cost)||0,sh=Number(S.shipping)||0,t=Number(S.turnover)||0;
+  const wf=calcWF(p);const profit=p-wf-sh-c;const g=getGrade(profit,c,t);
+  S.saved.unshift({
+    id:Date.now(),tab:S.tab,brand:S.brand,modelNo:S.modelNo.trim(),size:S.size.trim(),
+    price:p,cost:c,shipping:sh,profit,turnover:t,workFee:wf,
+    profitRate:c>0?((profit/c)*100).toFixed(1):'0.0',
+    expectedValue:profit*t,grade:g.l,
+    date:new Date().toLocaleDateString('ja-JP')
+  });
+  persist(); showToast('保存しました'); updateBadge();
+}
+
+// ── toast ──
+let toastTimer;
+function showToast(msg){
+  const el=$('toast'); el.textContent=msg; el.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'),1800);
+}
+
+// ── badge ──
+function updateBadge(){$('badge').textContent=S.saved.length}
+
+// ── list view ──
+function showList(){
+  $('main-view').classList.remove('active');
+  $('list-view').classList.add('active');
+  S.listTab=S.tab; renderList();
+}
+function hideList(){
+  $('list-view').classList.remove('active');
+  $('main-view').classList.add('active');
+}
+function switchListTab(tab){
+  S.listTab=tab; renderList();
+}
+function renderList(){
+  const tab=S.listTab;
+  $('lv-title').textContent=tab==='shoes'?'👟 シューズ':'👕 アパレル';
+  ['shoes','apparel'].forEach(k=>{
+    const cnt=S.saved.filter(s=>(s.tab||'shoes')===k).length;
+    const el=$('ltab-'+k);
+    el.classList.toggle('active',k===tab);
+    el.querySelector('span').textContent=cnt;
+  });
+  const items=S.saved.filter(s=>(s.tab||'shoes')===tab);
+  const wrap=$('list-items');
+  if(!items.length){wrap.innerHTML='<p class="empty">保存された商品はありません</p>';return}
+  wrap.innerHTML=items.map(item=>{
+    const gc={S:'#ffd740',A:'#69f0ae',B:'#40c4ff',C:'#aaa',D:'#ef5350'}[item.grade]||'#666';
+    return`<div class="card" onclick="loadItem(${item.id})">
+      <div class="card-top">
+        <div class="card-tags">
+          <span class="grade-sm" style="color:${gc};border-color:${gc}">${item.grade||'—'}</span>
+          ${item.brand?`<span class="card-brand">${item.brand}</span>`:''}
+          <span class="card-model">${item.modelNo}</span>
+          ${item.size?`<span class="card-size-tag">${item.size}</span>`:''}
+        </div>
+        <button class="del-btn" onclick="event.stopPropagation();delItem(${item.id})">✕</button>
+      </div>
+      <div class="card-grid">
+        <div class="card-cell"><span class="cell-label">販売</span><span class="cell-val">${fmt(item.price)}</span></div>
+        <div class="card-cell"><span class="cell-label">仕入</span><span class="cell-val">${fmt(item.cost)}</span></div>
+        <div class="card-cell"><span class="cell-label">利益</span><span class="cell-val" style="color:${item.profit>=0?'#69f0ae':'#ff5252'};font-weight:700">${fmt(item.profit)}</span></div>
+        <div class="card-cell"><span class="cell-label">回転数</span><span class="cell-val">${item.turnover||0}回</span></div>
+        <div class="card-cell"><span class="cell-label">利益率</span><span class="cell-val">${item.profitRate||'0.0'}%</span></div>
+        <div class="card-cell"><span class="cell-label">期待値</span><span class="cell-val" style="color:${(item.expectedValue||0)>=0?'#40c4ff':'#ff5252'};font-weight:700">${fmt(item.expectedValue||0)}</span></div>
+      </div>
+      <div class="card-date">${item.date}</div>
+    </div>`;
+  }).join('');
+}
+function delItem(id){
+  S.saved=S.saved.filter(s=>s.id!==id);persist();updateBadge();renderList();
+}
+function loadItem(id){
+  const item=S.saved.find(s=>s.id===id); if(!item)return;
+  S.tab=item.tab||'shoes'; S.brand=item.brand||'';
+  S.modelNo=item.modelNo; S.size=item.size||'';
+  S.price=String(item.price); S.cost=String(item.cost);
+  S.shipping=String(item.shipping||''); S.turnover=String(item.turnover||'');
+  // update DOM
+  if(S.tab!==document.querySelector('.tab.active')?.classList[1]){
+    document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+    document.querySelector('.tab.'+S.tab).classList.add('active');
+    $('logo-icon').textContent=S.tab==='shoes'?'👟':'👕';
+    $('size-label').textContent=S.tab==='shoes'?'サイズ':'サイズ/規格';
+    $('inp-modelNo').placeholder=S.tab==='shoes'?'DZ5485-612':'FW24-001';
+    $('inp-size').placeholder=S.tab==='shoes'?'27.5':'L';
+    buildDropdown();
+  }
+  $('brand-label').textContent=S.brand||'ブランドを選択';
+  $('brand-label').style.color=S.brand?'#fff':'#666';
+  $('inp-modelNo').value=S.modelNo;
+  $('inp-size').value=S.size;
+  $('inp-price').value=S.price;
+  $('inp-cost').value=S.cost;
+  $('inp-shipping').value=S.shipping;
+  $('inp-turnover').value=S.turnover;
+  hideList(); updateCalc(); updateSaveBtn();
+}
+
+function $(id){return document.getElementById(id)}
+
+// ── init ──
+buildDropdown();
+updateCalc();
+updateBadge();
 </script>
 </body>
 </html>
