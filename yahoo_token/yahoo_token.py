@@ -53,6 +53,10 @@ ALIASES = {
     "refresh_issued_at": ("YAHOO_REFRESH_TOKEN_ISSUED_AT",),
     "refresh_rotated_at": ("YAHOO_REFRESH_TOKEN_ROTATED_AT",),
     "last_error": ("YAHOO_TOKEN_LAST_ERROR",),
+    # ログイン情報（任意）。Cookie が切れた時の自動ログインにのみ使う。
+    # 誤って別サービスの認証情報を Yahoo! に送らないよう、候補は絞ってある。
+    "yahoo_id": ("YAHOO_LOGIN_ID", "YAHOO_ID", "YAHOO_USER_ID"),
+    "yahoo_password": ("YAHOO_LOGIN_PASSWORD", "YAHOO_PASSWORD", "YAHOO_PASS"),
     # 通知（任意）。未設定なら標準出力に出すだけ。
     "notify_webhook": ("YAHOO_NOTIFY_WEBHOOK",),
     "notify_email": ("YAHOO_NOTIFY_EMAIL",),

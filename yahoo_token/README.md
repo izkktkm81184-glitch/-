@@ -38,9 +38,13 @@ Yahoo!側の仕様として「4週間ごとに再認可してトークン情報�
 への遷移を**ブラウザ内で横取り**して認可コードを読む。実際に example.com へアクセスしないので、
 Yahoo!デベロッパーネットワーク側の redirect_uri 設定は**変更不要**。
 
-**パスワードは保存しない。** ログイン状態はブラウザプロファイル（`.browser_profile/`）の
-Cookie としてローカルにだけ残る。初回に一度だけ手動ログインすれば（SMS認証やパスワードレスでも可）、
-以降はログイン済み・同意済みのため無人でリダイレクトまで進む。
+ログイン状態はブラウザプロファイル（`.browser_profile/`）の Cookie としてローカルに残る。
+通常はログイン画面自体が出ないので、認証情報は使われない。Cookie が切れた時だけ
+`.env` の `YAHOO_LOGIN_ID` / `YAHOO_LOGIN_PASSWORD` で自動ログインする。
+
+**アカウントロック対策**：パスワードの投入は 1 回だけ。失敗を示す文言を検知した場合も、
+画面が変わらない場合も、再試行せず即座に中断して通知する。誤った値で繰り返し試して
+アカウントがロックされるのを防ぐため。
 
 ---
 
@@ -77,9 +81,17 @@ YAHOO_CLIENT_SECRET=（アプリケーションのシークレット）
 YAHOO_REFRESH_TOKEN=（現在のリフレッシュトークン）
 YAHOO_REDIRECT_URI=https://www.example.com/callback   # 省略時この値
 
+# 任意：Cookie が切れた時の自動ログイン用（無くても assist モードで運用できる）
+YAHOO_LOGIN_ID=（ヤフショ管理アカウントのログインID）
+YAHOO_LOGIN_PASSWORD=（そのパスワード）
+
 # 任意：通知先（未設定ならログに出るだけ）
 YAHOO_NOTIFY_WEBHOOK=https://hooks.slack.com/services/...
 ```
+
+`YAHOO_LOGIN_ID` は `YAHOO_ID` / `YAHOO_USER_ID`、`YAHOO_LOGIN_PASSWORD` は
+`YAHOO_PASSWORD` / `YAHOO_PASS` でも読む。別サービスの認証情報を誤って
+Yahoo! に送らないよう、これ以外の汎用的なキー名（`PASSWORD` など）は見に行かない。
 
 `YAHOO_ACCESS_TOKEN` / `YAHOO_ACCESS_TOKEN_EXPIRES_AT` /
 `YAHOO_REFRESH_TOKEN_ISSUED_AT` はツールが書き込む。書き込み前に `.bak` を残す。
@@ -159,7 +171,8 @@ python yahoo_reauth.py --mode manual         ブラウザ自動操作なし（�
 
 | 症状 | 原因と対処 |
 |---|---|
-| `--mode auto` で「ログインが切れている」 | Cookie の期限切れ。`--mode assist` を一度実行すれば復帰する |
+| 確認コード(SMS)を求められて中断 | 自動化不可の画面。`--mode assist` で一度手動で通せば Cookie が復帰する |
+| 「ログインに失敗しました」で中断 | ID/パスワードの誤り。ロック回避のため自動再試行はしない。値を直して再実行 |
 | 12時間で失効する | 公開鍵認証が未設定か公開鍵が期限切れ。ストアクリエイターProで登録し直す |
 | `invalid_grant` | リフレッシュトークンが失効済み。再認可が必要（watchdog が自動で行う） |
 | `invalid_client` | client_id / client_secret の誤り。Basic 認証と POST 両方を自動で試すので、通らなければ値そのものを疑う |
@@ -172,18 +185,22 @@ python yahoo_reauth.py --mode manual         ブラウザ自動操作なし（�
 ネットワークに繋がずに動作確認できる（トークンエンドポイントの応答を差し替えている）。
 
 ```
-python test_yahoo_token.py
+python test_yahoo_token.py     # トークン管理・.env 入出力（58項目）
+python test_yahoo_reauth.py    # ログイン〜同意の判断（28項目）
 ```
 
-.env の書き戻しでコメント・改行コード・文字コード・BOM・無関係なキーが
-壊れないことを含めて 58 項目を検証する。
+`test_yahoo_token.py` は .env の書き戻しでコメント・改行コード・文字コード・BOM・
+無関係なキーが壊れないことを検証する。`test_yahoo_reauth.py` は偽のブラウザ画面を
+渡して、パスワードを 2 回投入しないこと・失敗文言で即中断すること・確認コード画面を
+見分けること・例外メッセージにパスワードが混ざらないことを検証する。
 
 ---
 
 ## 8. 注意
 
-- `.browser_profile/` には Yahoo! のログイン Cookie が入る。`.env` と同じ扱いで、
-  リポジトリにコミットしないこと（`.gitignore` 済み）。
+- `.browser_profile/` には Yahoo! のログイン Cookie が入る。`.env`（パスワードを書いた場合は
+  特に）と同じ扱いで、リポジトリにコミットしないこと（`.gitignore` 済み）。
+  `.env` は共有フォルダやバックアップ先にも置かないほうがよい。
 - 自動再認可は Yahoo! 側の画面変更で壊れうる。だから watchdog は失敗時に必ず通知し、
   手動用の認可URLを添える。しきい値 7 日は「壊れてから気づいて直すまでの猶予」。
 - 認可コードの寿命は数分。取得後は即座に交換している。
