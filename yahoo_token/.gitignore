@@ -1,0 +1,6 @@
+.browser_profile/
+logs/
+*.env
+*.env.bak
+*.env.tmp
+__pycache__/
