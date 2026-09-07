@@ -214,6 +214,33 @@ for label, enc, bom in (("BOM無しUTF-8", "utf-8", b""),
           before.startswith(b"\xef\xbb\xbf") == after.startswith(b"\xef\xbb\xbf"))
     check(f"{label}: 既存行を保持", after.startswith(before.rstrip(b"\r\n")))
 
+
+print("\n== 14. diagnose_value（.env の値のよくある事故） ==")
+
+
+def has(problems, word):
+    return any(word in p for p in problems)
+
+
+long_ok = "a" * 40
+check("正常な値は無警告", yt.diagnose_value("tok", long_ok, long_ok) == [],
+      yt.diagnose_value("tok", long_ok, long_ok))
+check("空を検出", has(yt.diagnose_value("tok", "", ""), "空です"))
+check("短すぎを検出", has(yt.diagnose_value("tok", "abc", "abc"), "短すぎます"))
+check("全角スペースを検出",
+      has(yt.diagnose_value("tok", "a" * 20 + "\u3000b", "a" * 20 + "\u3000b"), "全角スペース"))
+check("全角イコールを検出",
+      has(yt.diagnose_value("tok", "a" * 20 + "\uff1d", "a" * 20 + "\uff1d"), "全角イコール"))
+check("非ASCIIを検出",
+      has(yt.diagnose_value("tok", "a" * 20 + "あ", "a" * 20 + "あ"), "非ASCII"))
+check("原因は1つだけ報告",
+      len([p for p in yt.diagnose_value("tok", "a" * 20 + "\u3000b", "a" * 20 + "\u3000b")
+           if "全角" in p or "空白" in p]) == 1)
+check("行末コメントで値が切れる件を検出",
+      has(yt.diagnose_value("tok", long_ok + " # メモ", long_ok), "コメント扱い"))
+check("クォート済みなら誤検出しない",
+      not has(yt.diagnose_value("tok", '"' + long_ok + ' # x"', long_ok), "コメント扱い"))
+
 shutil.rmtree(WORK, ignore_errors=True)
 print(f"\n===== 成功 {ok} / 失敗 {fail} =====")
 sys.exit(1 if fail else 0)

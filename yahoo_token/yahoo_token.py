@@ -5,6 +5,7 @@
 依存ライブラリなし（Python 3.8+ 標準ライブラリのみ）。
 
 CLI:
+    python yahoo_token.py doctor                 設定・通信・トークンを点検（まずこれ）
     python yahoo_token.py status                 残り日数などを表示
     python yahoo_token.py token                  有効なアクセストークンを出力（必要なら自動更新）
     python yahoo_token.py refresh                アクセストークンを強制更新
@@ -30,6 +31,7 @@ import sys
 import urllib.error
 import urllib.parse
 import urllib.request
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 
 AUTH_URL = "https://auth.login.yahoo.co.jp/yconnect/v2/authorization"
@@ -39,6 +41,30 @@ TOKEN_URL = "https://auth.login.yahoo.co.jp/yconnect/v2/token"
 REFRESH_LIFETIME_DAYS = 28
 
 JST = dt.timezone(dt.timedelta(hours=9))
+
+# トークンエンドポイントのエラーコードごとの原因と対処。
+# 生のエラーコードだけでは何をすればよいか分からないため、必ず添えて出す。
+ERROR_HINTS = {
+    "invalid_grant": (
+        "リフレッシュトークンまたは認可コードが使えません。よくある原因:\n"
+        "  ・認可コードの期限切れ（数分で失効）。URLを開き直して取り直す\n"
+        "  ・認可コードの使い回し（1回で使い捨て）。.env の YAHOO_AUTH_CODE に\n"
+        "    古い値が残っていると毎回このエラーになる\n"
+        "  ・リフレッシュトークンが4週間を過ぎて失効。再認可が必要\n"
+        "  ・redirect_uri が認可時と違う"
+    ),
+    "invalid_client": (
+        "client_id / client_secret が違います。Yahoo!デベロッパーネットワークの\n"
+        "  アプリケーション詳細と .env の値を突き合わせてください\n"
+        "  （値の前後に空白や引用符が混ざっていないかも確認）"
+    ),
+    "invalid_request": (
+        "リクエストのパラメータが不足・不正です。redirect_uri が認可時と\n"
+        "  完全一致しているか確認してください"
+    ),
+    "unsupported_grant_type": "grant_type が未対応です。ツールの不具合の可能性があります",
+    "invalid_scope": "scope が不正です。.env の YAHOO_SCOPE を確認してください",
+}
 
 # .env のキー名ゆれを吸収する。タプルの先頭が「書き込みに使う正式名」。
 ALIASES = {
@@ -136,6 +162,13 @@ class EnvFile:
         if len(value) >= 2 and value[0] == value[-1] and value[0] in ('"', "'"):
             value = value[1:-1]
         return value
+
+    def raw_value(self, key: str) -> str | None:
+        """クォート除去も空白除去もしていない生の値（診断用）。"""
+        i = self._index.get(key)
+        if i is None:
+            return None
+        return self._lines[i].split("=", 1)[1]
 
     def get(self, key: str, default: str | None = None) -> str | None:
         i = self._index.get(key)
@@ -318,7 +351,11 @@ class YahooTokenManager:
                     message = parsed.get("error_description", detail)
                 except (ValueError, AttributeError):
                     code, message = "", detail
-                last_error = TokenError(f"HTTP {exc.code} {code}: {message}")
+                hint = ERROR_HINTS.get(code)
+                text = f"HTTP {exc.code} {code}: {message}"
+                if hint:
+                    text += f"\n  → {hint}"
+                last_error = TokenError(text)
                 # クライアント認証方式の問題以外はリトライしても無駄
                 if i == 0 and exc.code in (400, 401) and code in ("invalid_client", ""):
                     continue
@@ -410,6 +447,184 @@ def get_access_token(env_path: str | Path | None = None, margin_seconds: int = 3
     return YahooTokenManager(env_path).get_access_token(margin_seconds)
 
 
+# ---------------------------------------------------------------- 自己診断
+
+# 手で編集した .env に紛れ込みやすい文字。
+SUSPICIOUS_CHARS = {
+    "　": "全角スペース",
+    "＝": "全角イコール",
+    "“": "全角ダブルクォート",
+    "”": "全角ダブルクォート",
+    "、": "読点",
+    "。": "句点",
+}
+
+
+def diagnose_value(label: str, raw: str | None, parsed: str | None,
+                   *, min_length: int = 8) -> list[str]:
+    """.env の 1 項目によくある事故を洗い出す。戻り値は警告文のリスト。"""
+    problems = []
+    if not parsed:
+        problems.append(f"{label} が空です")
+        return problems
+
+    # 同じ原因で複数の警告が出ると読みにくいので、具体的なものを 1 つだけ出す。
+    culprits = sorted({name for char, name in SUSPICIOUS_CHARS.items() if char in parsed})
+    if culprits:
+        problems.append(f"{label} に{'・'.join(culprits)}が混ざっています")
+    elif any(ord(c) > 127 for c in parsed):
+        problems.append(f"{label} に全角・非ASCII文字が含まれます（コピペ時の変換ミス？）")
+    elif any(c.isspace() for c in parsed):
+        problems.append(f"{label} の値の中に空白・改行が入っています（途中で切れている？）")
+    if len(parsed) < min_length:
+        problems.append(f"{label} が短すぎます（{len(parsed)}文字）。値が欠けていませんか")
+    # 値の中の " #" 以降はコメントとして捨てられる。意図せず切れていないか。
+    if raw and raw.strip()[:1] not in ('"', "'") and " #" in raw:
+        problems.append(f"{label} に「 #」があるため、そこから後ろがコメント扱いで捨てられます")
+    return problems
+
+
+def _check_endpoint() -> tuple[bool, str, dt.datetime | None]:
+    """Yahoo!の認可エンドポイントに届くか、あわせてサーバ時刻を取る。"""
+    request = urllib.request.Request(
+        AUTH_URL, method="GET", headers={"User-Agent": "yahoo-token-doctor"}
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=15) as response:
+            date_header = response.headers.get("Date")
+            return True, f"到達OK (HTTP {response.status})", _parse_http_date(date_header)
+    except urllib.error.HTTPError as exc:
+        # パラメータ無しなので 400 系が返るのが正常。到達自体はできている。
+        return True, f"到達OK (HTTP {exc.code} — パラメータ無しなので正常)", _parse_http_date(
+            exc.headers.get("Date") if exc.headers else None
+        )
+    except urllib.error.URLError as exc:
+        return False, f"到達できません: {exc.reason}", None
+    except OSError as exc:
+        return False, f"到達できません: {exc}", None
+
+
+def _parse_http_date(value: str | None) -> dt.datetime | None:
+    if not value:
+        return None
+    try:
+        return parsedate_to_datetime(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def cmd_doctor(manager: YahooTokenManager) -> int:
+    """設定・通信・トークンを順に点検し、原因と対処を日本語で出す。"""
+    problems: list[str] = []
+    notes: list[str] = []
+
+    print("=" * 60)
+    print("1. .env ファイル")
+    print("=" * 60)
+    print(f"  パス       : {manager.env.path}")
+    print(f"  文字コード : {manager.env.encoding}")
+    print(f"  改行コード : {'CRLF' if manager.env.newline == chr(13) + chr(10) else 'LF'}")
+    print(f"  行数       : {len(manager.env._lines)}")
+
+    print("\n" + "=" * 60)
+    print("2. 必須項目")
+    print("=" * 60)
+    for field, label, minimum in (
+        ("client_id", "client_id", 16),
+        ("client_secret", "client_secret", 16),
+        ("refresh_token", "refresh_token", 16),
+    ):
+        value = manager._get(field)
+        found_key = next((k for k in ALIASES[field] if k in manager.env._index), None)
+        if not value:
+            print(f"  ✗ {label:<14}: 見つかりません"
+                  f"（探したキー名: {' / '.join(ALIASES[field])}）")
+            problems.append(f"{label} が .env にありません")
+            continue
+        found = diagnose_value(label, manager.env.raw_value(found_key), value,
+                               min_length=minimum)
+        mark = "⚠" if found else "✓"
+        print(f"  {mark} {label:<14}: {found_key} = {value[:8]}…（{len(value)}文字）")
+        for problem in found:
+            print(f"      ⚠ {problem}")
+        problems.extend(found)
+
+    print("\n" + "=" * 60)
+    print("3. 残っている認可コード")
+    print("=" * 60)
+    stale_code = manager._get("auth_code")
+    if stale_code:
+        print(f"  ⚠ YAHOO_AUTH_CODE に値が残っています: {stale_code[:10]}…")
+        print("      認可コードは 1 回で使い捨て・数分で失効します。古い値が残ったまま")
+        print("      交換処理を走らせると毎回 invalid_grant になります。")
+        print("      → このツールは交換成功時に自動で空にします。")
+        notes.append("YAHOO_AUTH_CODE に古い値が残っている")
+    else:
+        print("  ✓ 残っていません（正常）")
+
+    print("\n" + "=" * 60)
+    print("4. 通信と PC の時計")
+    print("=" * 60)
+    reachable, message, server_time = _check_endpoint()
+    print(f"  {'✓' if reachable else '✗'} auth.login.yahoo.co.jp : {message}")
+    if not reachable:
+        problems.append("Yahoo! のエンドポイントに到達できない（社内プロキシ・FWの確認を）")
+    if server_time:
+        skew = abs((server_time - _now()).total_seconds())
+        if skew > 120:
+            print(f"  ✗ PCの時計が {skew:.0f} 秒ずれています（サーバ: {_fmt_ts(server_time)}）")
+            print("      ずれが大きいと認証に失敗します。Windowsの時刻同期を実行してください。")
+            problems.append(f"PCの時計が {skew:.0f} 秒ずれている")
+        else:
+            print(f"  ✓ 時計のずれ {skew:.0f} 秒（問題なし）")
+
+    print("\n" + "=" * 60)
+    print("5. トークンの状態")
+    print("=" * 60)
+    status = manager.status()
+    _print_status(status)
+    remaining = status["refresh_remaining_days"]
+    if remaining is None:
+        notes.append("起算日が未記録のため残り日数が分からない（一度再認可すれば記録される）")
+    elif remaining <= 0:
+        problems.append("リフレッシュトークンが推定失効日を過ぎている。再認可が必要")
+    elif remaining <= 7:
+        notes.append(f"残り {remaining:.1f} 日。まもなく再認可が必要")
+
+    print("\n" + "=" * 60)
+    print("6. 実際にアクセストークンを更新してみる")
+    print("=" * 60)
+    if not reachable:
+        print("  - 通信できないため省略")
+    elif not manager._get("refresh_token"):
+        print("  - リフレッシュトークンが無いため省略")
+    else:
+        try:
+            payload = manager.refresh()
+            print(f"  ✓ 成功（有効 {payload.get('expires_in', '?')} 秒）")
+            if payload.get("refresh_token"):
+                print("      リフレッシュトークンも新しい値に更新されました")
+        except TokenError as exc:
+            print(f"  ✗ 失敗: {exc}")
+            problems.append(f"トークン更新に失敗: {str(exc).splitlines()[0]}")
+
+    print("\n" + "=" * 60)
+    print("診断結果")
+    print("=" * 60)
+    if not problems and not notes:
+        print("  問題は見つかりませんでした。")
+        return 0
+    for problem in problems:
+        print(f"  ✗ {problem}")
+    for note in notes:
+        print(f"  ・{note}")
+    if problems:
+        print("\n  再認可で解決する場合が多いです:")
+        print("      python yahoo_reauth.py --mode manual   （インストール不要）")
+        print("      python yahoo_reauth.py --mode assist   （ブラウザ自動操作）")
+    return 1 if problems else 0
+
+
 # ------------------------------------------------------------------- CLI
 
 def _extract_code(text: str) -> str:
@@ -448,6 +663,7 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
 
     sub.add_parser("status", help="トークンの状態を表示")
+    sub.add_parser("doctor", help="設定・通信・トークンを点検し、原因と対処を表示")
     sub.add_parser("token", help="有効なアクセストークンを標準出力（必要なら更新）")
     sub.add_parser("refresh", help="アクセストークンを強制更新")
 
@@ -478,6 +694,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "status":
             _print_status(manager.status())
             return 0
+
+        if args.command == "doctor":
+            return cmd_doctor(manager)
 
         if args.command == "token":
             print(manager.get_access_token())

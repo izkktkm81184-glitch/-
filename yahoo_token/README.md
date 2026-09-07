@@ -5,6 +5,27 @@
 
 ---
 
+## 0. まず動かす（インストール不要・3分）
+
+失効が近い時はこれだけでよい。Playwright も要らない。
+
+```
+cd china_import_db\yahoo_token
+
+python yahoo_token.py doctor          # 何が起きているか診断する
+python yahoo_reauth.py --mode manual  # 認可URLが出る → 開いて「同意する」
+                                      # → リダイレクト先URLを丸ごと貼り付け
+python yahoo_token.py status          # 残り日数が28日に戻っていれば成功
+```
+
+`--mode manual` は従来手順の 3〜5（code をコピー → .env に貼る → スクリプト実行）を
+1 手にまとめたもの。URL を丸ごと貼れば `code=` の切り出しも交換も保存も自動で、
+`YAHOO_AUTH_CODE` の消し忘れも起きない。
+
+自動化（毎日の点検と無人での再認可）は 3 章以降。
+
+---
+
 ## 1. まず結論：有効期間は延ばせない
 
 | トークン | 有効期限 | 延長できるか |
@@ -153,6 +174,7 @@ headers = {"Authorization": f"Bearer {get_access_token()}"}
 ## 5. コマンド一覧
 
 ```
+python yahoo_token.py doctor                 設定・通信・トークンを点検（困ったらこれ）
 python yahoo_token.py status                 状態と残り日数
 python yahoo_token.py token                  有効なアクセストークンを出力
 python yahoo_token.py refresh                アクセストークンを強制更新
@@ -169,14 +191,20 @@ python yahoo_reauth.py --mode manual         ブラウザ自動操作なし（�
 
 ## 6. うまくいかない時
 
+まず `python yahoo_token.py doctor` を実行する。.env の中身・Yahoo!への到達性・
+PCの時計のずれ・トークンの残り日数を順に点検し、原因と対処を日本語で表示する。
+
 | 症状 | 原因と対処 |
 |---|---|
+| **毎回 `invalid_grant`** | `YAHOO_AUTH_CODE` に古い認可コードが残っているのが典型。認可コードは1回で使い捨て・数分で失効する。本ツールは交換成功時に自動で空にする |
 | 確認コード(SMS)を求められて中断 | 自動化不可の画面。`--mode assist` で一度手動で通せば Cookie が復帰する |
 | 「ログインに失敗しました」で中断 | ID/パスワードの誤り。ロック回避のため自動再試行はしない。値を直して再実行 |
 | 12時間で失効する | 公開鍵認証が未設定か公開鍵が期限切れ。ストアクリエイターProで登録し直す |
 | `invalid_grant` | リフレッシュトークンが失効済み。再認可が必要（watchdog が自動で行う） |
 | `invalid_client` | client_id / client_secret の誤り。Basic 認証と POST 両方を自動で試すので、通らなければ値そのものを疑う |
 | 残り日数が「不明」 | `YAHOO_REFRESH_TOKEN_ISSUED_AT` 未記録。一度再認可すれば記録される |
+| 値をコピペしたのに通らない | 全角スペースや全角イコールの混入。`doctor` が検出する |
+| 時々だけ失敗する | PCの時計のずれ。`doctor` がサーバ時刻と比較して検出する |
 
 ---
 
@@ -185,7 +213,7 @@ python yahoo_reauth.py --mode manual         ブラウザ自動操作なし（�
 ネットワークに繋がずに動作確認できる（トークンエンドポイントの応答を差し替えている）。
 
 ```
-python test_yahoo_token.py     # トークン管理・.env 入出力（58項目）
+python test_yahoo_token.py     # トークン管理・.env 入出力・値の診断（67項目）
 python test_yahoo_reauth.py    # ログイン〜同意の判断（28項目）
 ```
 
