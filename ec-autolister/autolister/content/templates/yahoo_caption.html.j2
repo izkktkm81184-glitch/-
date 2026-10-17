@@ -1,0 +1,16 @@
+<div style="line-height:1.7">
+<p>{{ c.lead }}</p>
+<h3>おすすめポイント</h3>
+<ul>
+{% for p in c.selling_points %}<li>{{ p }}</li>
+{% endfor %}</ul>
+<h3>商品仕様</h3>
+<table border="1" cellpadding="4" cellspacing="0" style="border-collapse:collapse;width:100%">
+{% for r in c.specs %}<tr><th style="background:#f5f5f5;width:30%;text-align:left">{{ r.label }}</th><td>{{ r.value }}</td></tr>
+{% endfor %}</table>
+<p>{{ c.description | nl2br }}</p>
+<h3>ご注意</h3>
+<ul>
+{% for n in notes %}<li>{{ n }}</li>
+{% endfor %}</ul>
+</div>

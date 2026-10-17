@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ec-autolister"
+version = "0.1.0"
+description = "楽天市場・Yahoo!ショッピング向け 商品リサーチ→画像生成→商品ページ作成→出品 自動化パイプライン"
+requires-python = ">=3.11"
+dependencies = [
+  "anthropic>=1.0",
+  "httpx>=0.27",
+  "pydantic>=2.6",
+  "pillow>=10.0",
+  "jinja2>=3.1",
+  "python-dotenv>=1.0",
+  "cryptography>=42",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "respx>=0.21"]
+
+[project.scripts]
+autolister = "autolister.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["autolister*"]
+
+[tool.setuptools.package-data]
+autolister = ["content/templates/*.j2"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

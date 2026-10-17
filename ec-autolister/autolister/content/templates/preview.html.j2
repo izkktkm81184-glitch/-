@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ src.sku }} プレビュー</title>
+<style>
+body{font-family:sans-serif;max-width:960px;margin:0 auto;padding:16px;color:#222;background:#fff}
+h1{font-size:20px} h2{font-size:16px;border-left:4px solid #bf0000;padding-left:8px;margin-top:32px}
+.imgs{display:flex;gap:8px;flex-wrap:wrap} .imgs img{width:180px;border:1px solid #ddd}
+.warn{background:#fff3cd;border:1px solid #e0c060;padding:8px 12px}
+.box{border:1px solid #ddd;padding:12px;overflow-wrap:anywhere}
+table.kv td{padding:4px 8px;border-bottom:1px solid #eee;vertical-align:top}
+</style></head><body>
+<h1>{{ src.sku }} : {{ src.name }}</h1>
+{% if warnings %}<div class="warn"><b>要確認</b><ul>{% for w in warnings %}<li>{{ w }}</li>{% endfor %}</ul></div>{% endif %}
+{% if research %}
+<h2>リサーチ結果 (ランク {{ research.grade }})</h2>
+<ul>{% for r in research.reasons %}<li>{{ r }}</li>{% endfor %}</ul>
+{% endif %}
+<h2>画像</h2>
+<div class="imgs">{% for p in images %}<img src="{{ p }}">{% endfor %}</div>
+<h2>タイトル類</h2>
+<table class="kv">
+<tr><td>楽天 商品名</td><td>{{ c.rakuten_title }}</td></tr>
+<tr><td>楽天 キャッチコピー</td><td>{{ c.rakuten_catch_copy }}</td></tr>
+<tr><td>Yahoo 商品名</td><td>{{ c.yahoo_title }}</td></tr>
+<tr><td>Yahoo キャッチコピー</td><td>{{ c.yahoo_headline }}</td></tr>
+<tr><td>meta description</td><td>{{ c.meta_description }}</td></tr>
+<tr><td>キーワード</td><td>{{ c.search_keywords | join(", ") }}</td></tr>
+</table>
+<h2>楽天 PC用商品説明文</h2><div class="box">{{ rakuten_pc | safe }}</div>
+<h2>Yahoo 商品説明 (caption)</h2><div class="box">{{ yahoo_caption | safe }}</div>
+<h2>Yahoo 商品情報 (explanation)</h2><div class="box">{{ yahoo_explanation | nl2br }}</div>
+</body></html>

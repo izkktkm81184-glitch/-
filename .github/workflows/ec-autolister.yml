@@ -1,0 +1,88 @@
+name: ec-autolister
+
+on:
+  push:
+    paths: ["ec-autolister/**", ".github/workflows/ec-autolister.yml"]
+  pull_request:
+    paths: ["ec-autolister/**"]
+  schedule:
+    - cron: "17 0 * * *" # 毎日 9:17 JST
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: ec-autolister
+
+jobs:
+  test:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: sudo apt-get install -y fonts-ipafont-gothic
+      - run: pip install -e ".[dev]"
+      - run: pytest -q
+
+  # 定期実行: リポジトリ変数 AUTOLISTER_SCHEDULE=true で有効化。
+  # AUTOLISTER_PUBLISH=true でなければ出品はせず、生成物を Artifact に残すだけ。
+  pipeline:
+    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && vars.AUTOLISTER_SCHEDULE == 'true'
+    runs-on: ubuntu-latest
+    concurrency: ec-autolister-pipeline
+    env:
+      AUTOLISTER_DATA_DIR: ./data
+      DRY_RUN: ${{ vars.AUTOLISTER_PUBLISH == 'true' && 'false' || 'true' }}
+      AUTO_APPROVE_GRADE: ${{ vars.AUTO_APPROVE_GRADE }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}
+      YAHOO_APP_ID: ${{ secrets.YAHOO_APP_ID }}
+      RAKUTEN_SERVICE_SECRET: ${{ secrets.RAKUTEN_SERVICE_SECRET }}
+      RAKUTEN_LICENSE_KEY: ${{ secrets.RAKUTEN_LICENSE_KEY }}
+      RAKUTEN_SHOP_URL: ${{ vars.RAKUTEN_SHOP_URL }}
+      RAKUTEN_CABINET_FOLDER_ID: ${{ vars.RAKUTEN_CABINET_FOLDER_ID }}
+      RAKUTEN_CABINET_FOLDER_PATH: ${{ vars.RAKUTEN_CABINET_FOLDER_PATH }}
+      RAKUTEN_GENRE_ID: ${{ vars.RAKUTEN_GENRE_ID }}
+      YAHOO_SELLER_ID: ${{ vars.YAHOO_SELLER_ID }}
+      YAHOO_CLIENT_ID: ${{ secrets.YAHOO_CLIENT_ID }}
+      YAHOO_CLIENT_SECRET: ${{ secrets.YAHOO_CLIENT_SECRET }}
+      YAHOO_REFRESH_TOKEN: ${{ secrets.YAHOO_REFRESH_TOKEN }}
+      YAHOO_PUBLIC_KEY_VERSION: ${{ vars.YAHOO_PUBLIC_KEY_VERSION }}
+      YAHOO_STORE_PATH: ${{ vars.YAHOO_STORE_PATH }}
+      YAHOO_PRODUCT_CATEGORY: ${{ vars.YAHOO_PRODUCT_CATEGORY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: sudo apt-get install -y fonts-ipafont-gothic
+      - run: pip install -e .
+      # 進捗DB (どの商品を出品済みか) を実行間で引き継ぐ
+      - uses: actions/cache/restore@v4
+        with:
+          path: ec-autolister/data/autolister.db
+          key: autolister-db-${{ github.run_id }}
+          restore-keys: autolister-db-
+      - name: Yahoo 公開鍵
+        if: env.YAHOO_PUBLIC_KEY_VERSION != ''
+        run: |
+          echo "${{ secrets.YAHOO_PUBLIC_KEY_PEM }}" > yahoo_public.pem
+          echo "YAHOO_PUBLIC_KEY_PATH=$PWD/yahoo_public.pem" >> "$GITHUB_ENV"
+      - name: Run pipeline
+        run: |
+          ARGS=""
+          [ -f sources/sources.csv ] && ARGS="--csv sources/sources.csv"
+          autolister run $ARGS --yes
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: ec-autolister/data/autolister.db
+          key: autolister-db-${{ github.run_id }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: autolister-output
+          path: ec-autolister/data/output
+          retention-days: 14

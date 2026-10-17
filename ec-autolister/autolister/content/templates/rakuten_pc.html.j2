@@ -1,0 +1,15 @@
+<p>{{ c.lead }}</p>
+<br>
+<b>■ おすすめポイント</b><br>
+{% for p in c.selling_points %}・{{ p }}<br>
+{% endfor %}<br>
+<b>■ 商品仕様</b>
+<table border="1" cellpadding="4" cellspacing="0" width="100%">
+{% for r in c.specs %}<tr><td width="30%" bgcolor="#f5f5f5">{{ r.label }}</td><td>{{ r.value }}</td></tr>
+{% endfor %}</table>
+<br>
+{{ c.description | nl2br }}
+<br><br>
+<b>■ ご注意</b><br>
+{% for n in notes %}・{{ n }}<br>
+{% endfor %}
